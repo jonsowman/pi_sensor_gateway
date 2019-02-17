@@ -1,6 +1,6 @@
 import sqlite3
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 if __name__ == '__main__':
@@ -21,8 +21,13 @@ if __name__ == '__main__':
             conn.commit()
 
     # Prune old uploaded rows
-    c.execute("DELETE FROM readings WHERE uploaded = 1".format(row[0]))
-    conn.commit()
+    delete_threshold = datetime.now() - timedelta(hours=1)
+    c.execute("SELECT * FROM readings WHERE uploaded = 1 AND timestamp < '{}'".format(delete_threshold))
+    rows = c.fetchall()
+    print("Found {} rows for deletion".format(len(rows)))
+    if len(rows) > 0:
+        c.execute("DELETE FROM readings WHERE uploaded = 1 AND timestamp < '{}'".format(row[0], delete_threshold))
+        conn.commit()
 
     c.close()
     time.sleep(60)
